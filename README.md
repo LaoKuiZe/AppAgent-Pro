@@ -72,7 +72,6 @@ The agent enhances its response with **both** YouTube and Amazon.
 
 5. Clone this repo and install dependencies:
    ```bash
-   git clone https://github.com/LaoKuiZe/AppAgent-Pro.git
    cd AppAgent-Pro
    pip install -r requirements.txt
    ```
