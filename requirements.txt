@@ -1,0 +1,8 @@
+colorama==0.4.6
+dashscope==1.22.1
+opencv_python==4.11.0.86
+pyshine==0.0.9
+PyYAML==6.0.2
+PyYAML==6.0.2
+Requests==2.32.3
+streamlit==1.45.0
