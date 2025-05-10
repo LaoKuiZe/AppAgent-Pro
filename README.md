@@ -50,7 +50,7 @@ The agent chooses to enhance the answer using one external app (e.g., YouTube).
 ### ✅ Scenario 3: **Two External Apps Used**  
 The agent enhances its response with **both** YouTube and Amazon.
 
-> 🐈 _“How to keep a cat?” → Add product links (Amazon) and assembly guide videos (YouTube)._
+> 🐈 _“How to keep a cat?” → Add product picture (Amazon) and assembly guide videos (YouTube)._
 
 - **Video Demonstration**  
   <p align="center">
