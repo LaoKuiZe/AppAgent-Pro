@@ -42,7 +42,7 @@ The agent chooses to enhance the answer using one external app (e.g., YouTube).
 
 - **Video Demonstration**  
   <p align="center">
-    <video src="https://github.com/user-attachments/assets/20288bd2-5774-4053-aa0c-c884ae4d60ba" controls width="600"></video>
+    <video src="https://github.com/user-attachments/assets/94d98220-6e0e-4edb-89ad-88ffb2c45136" controls width="600"></video>
   </p>
 
 ---
