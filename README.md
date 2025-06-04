@@ -80,8 +80,7 @@ Edit `config.yaml` with:
 - 🔑 `openai_api_key`: Your OpenAI key with GPT-4o access.
 - 🌐 `openai_base`: (Optional) Base URL if using a proxy.
 - ⏱️ `request_interval`: Seconds between API calls.
-
-💡 Want to use a custom model? Implement it in `scripts/model.py`.
+- 📜 `AUTO_DOC`:If set to `true`, the system will automatically generate a document after each sub-task finishes.
 
 ---
 
