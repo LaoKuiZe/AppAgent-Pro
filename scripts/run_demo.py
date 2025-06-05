@@ -3,17 +3,16 @@ import sys
 import streamlit as st
 from io import StringIO
 from utils import word_iterator
-from contextlib import contextmanager  # 添加这一行
+from contextlib import contextmanager
 import re
 import base64
 
-# 动态导入 subtask
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts')))
 from sub_task import subtask
 
-# 添加图片base64编码函数
+
 def get_image_base64(image_path):
-    """将图片文件转换为base64编码的字符串"""
     try:
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode()
@@ -21,7 +20,7 @@ def get_image_base64(image_path):
         st.error(f"Error reading image {image_path}: {e}")
         return ""
 
-# 创建会话状态变量
+
 if 'submitted' not in st.session_state:
     st.session_state.submitted = False
 if 'output_lines' not in st.session_state:
@@ -39,11 +38,10 @@ if 'agent_status' not in st.session_state:
 if 'current_app' not in st.session_state:
     st.session_state.current_app = ""
 
-# 添加一个用于存储选中示例查询的状态变量
 if 'selected_example_query' not in st.session_state:
     st.session_state.selected_example_query = ""
 
-# 定义回调函数
+
 def submit_query():
     st.session_state.submitted = True
 
@@ -64,9 +62,12 @@ st.set_page_config(
 def capture_and_stream():
     # 在主栏目创建一个空容器
     main_container = st.container()
-    # 在侧边栏创建一个空容器
-    sidebar_container = st.sidebar.container()
-    sidebar_placeholder = sidebar_container.empty()
+    
+    # 检查是否已有log内容的占位符，如果没有就创建一个
+    if 'log_placeholder' not in st.session_state:
+        st.session_state.log_placeholder = st.sidebar.empty()
+    
+    sidebar_placeholder = st.session_state.log_placeholder
 
     # 正则表达式，用于匹配并移除 ANSI 转义码
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])') # delete the color code
@@ -74,42 +75,35 @@ def capture_and_stream():
     # 创建一个自定义的文件对象来捕获输出
     class StreamCapture:
         def __init__(self):
-            self.text = ""
+            # 如果已有log内容，保留它
+            if 'log_content' not in st.session_state:
+                st.session_state.log_content = ""
+            self.text = st.session_state.log_content
             
         def write(self, text):
-            # 首先移除 ANSI 代码
             clean_text = ansi_escape.sub('', text)
             
-            # 过滤掉特殊字符和异常格式
-            # 1. 替换单引号和特殊引号
             clean_text = re.sub(r'[′`]', "'", clean_text)
             
-            # 2. 确保数字后面的单引号不会被分隔
             clean_text = re.sub(r'(\d+)\s*[\'′`]\s*', r'\1\'', clean_text)
             
-            # 3. 移除单字符后跟<br>的模式 (常见错误模式)
             clean_text = re.sub(r'([a-zA-Z0-9])\s*<br>', r'\1', clean_text)
             
-            # 4. 如果是完全乱码的行(每个字符都被分离)，尝试重新组合
             if re.search(r'(<br>)?[a-zA-Z0-9](<br>)[a-zA-Z0-9](<br>)', clean_text):
                 clean_text = re.sub(r'(<br>)?([a-zA-Z0-9])(<br>)', r'\2', clean_text)
 
-            # 5. 移除末尾多余的换行符，只保留一个
             clean_text = clean_text.rstrip('\n') + ('\n' if clean_text.endswith('\n') else '')
-    
-            # 6. 规范化换行符，避免连续多个换行
+
             clean_text = re.sub(r'\n{2,}', '\n', clean_text)
-            
-            # 正常将换行符替换为HTML换行
+
             html_text = clean_text.replace('\n', '<br>')
             
-            # 累加处理后的文本
             self.text += html_text
-              # 更新侧边栏内容，使用HTML格式，并添加自动滚动脚本
-            # 使用更专业的控制台样式展示输出
+            st.session_state.log_content = self.text
+            
             formatted_text = f"""
             <div class="process-log" style="font-family: 'Roboto Mono', monospace; font-size: 0.85rem; 
-                                           background-color: rgba(0, 0, 0, 0.2); border-radius: 8px; 
+                                           background-color: rgba(255, 255, 255, 0.25); border-radius: 8px; 
                                            padding: 1rem; line-height: 1.5; color: #E0E0E0; 
                                            max-height: 75vh; overflow-y: auto;">
                 {self.text}
@@ -168,20 +162,18 @@ def capture_and_stream():
     finally:
         sys.stdout = old_stdout
 
-# 页面样式和标题 - 优化为适合学术展示的现代界面
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-    
-    /* 全局主题颜色 */
+      /* 全局主题颜色 */
     :root {
         --primary-color: #1a202c;          /* 深蓝灰 - 主色调 */
         --secondary-color: #4299e1;        /* 明亮蓝色 - 强调色 */
         --accent-color: #38b2ac;           /* 青绿色 - 特殊强调 */
         --success-color: #48bb78;          /* 成功绿色 */
         --warning-color: #ed8936;          /* 警告橙色 */
-        --light-bg: #f7fafc;               /* 浅灰背景 */
-        --dark-bg: #2d3748;                /* 深色背景 */
+        --light-bg: #2e86c1;               /* 浅灰背景 */
+        --dark-bg: #21618c;                /* 更明亮的侧边栏背景 */
         --card-bg: #ffffff;                /* 卡片背景 */
         --text-color: #2d3748;             /* 主要文本颜色 */
         --light-text: #a0aec0;             /* 浅色文本 */
@@ -423,7 +415,7 @@ st.markdown("""
     
     .screenshot-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 1.5rem;
         margin-top: 1.5rem;
     }
@@ -434,6 +426,24 @@ st.markdown("""
         padding: 1rem;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         border: 1px solid var(--border-color);
+    }
+    
+    /* 添加截图尺寸限制 */
+    .screenshot-item img {
+        max-height: 500px;
+        object-fit: contain;
+        margin: 0 auto;
+        display: block;
+    }
+    
+    /* 单张截图的尺寸限制 */
+    .single-screenshot {
+        max-height: 600px;
+        object-fit: contain;
+        margin: 0 auto;
+        display: block;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     
     .app-badge {
@@ -464,19 +474,15 @@ st.markdown("""
         margin-bottom: 1.5rem !important;
         padding-bottom: 0.75rem !important;
         border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
-    }
-    
-    .sidebar-info {
-        background: rgba(255, 255, 255, 0.1);
+    }    .sidebar-info {
+        background: rgba(255, 255, 255, 0.25);
         border-radius: var(--border-radius);
         padding: 1.5rem;
         margin-bottom: 1.5rem;
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .process-log {
-        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+    }.process-log {
+        background: rgba(255, 255, 255, 0.25);
         border-radius: var(--border-radius);
         padding: 1rem;
         font-family: 'JetBrains Mono', monospace;
@@ -486,7 +492,7 @@ st.markdown("""
         overflow-y: auto;
         line-height: 1.5;
         margin-top: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.35);
     }
     
     /* 状态指示器 */
@@ -614,6 +620,15 @@ st.markdown("""
         .main .block-container {
             padding: 1rem;
         }
+        
+        /* 移动设备上的截图优化 */
+        .screenshot-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .screenshot-item img, .single-screenshot {
+            max-height: 350px;
+        }
     }
     
     /* 示例查询按钮 */
@@ -680,7 +695,6 @@ st.markdown("""
 main_col = st.container()
 
 with main_col:
-    # Hero Section - 学术展示标题
     st.markdown("""
     <div class="hero-section">
         <div class="hero-content">
@@ -693,7 +707,6 @@ with main_col:
     </div>
     """, unsafe_allow_html=True)
     
-    # 特色功能展示
     st.markdown("""
     <div class="feature-cards">
         <div class="feature-card">
@@ -720,7 +733,6 @@ with main_col:
     </div>
     """, unsafe_allow_html=True)
     
-    # 标题和说明（不使用容器包装）
     st.markdown("""
         <h2 style="font-size: 1.8rem; font-weight: 600; color: var(--text-color); 
                    margin-bottom: 0.8rem; text-align: center;">Try AppAgent-Pro</h2>
@@ -730,30 +742,29 @@ with main_col:
         </p>
     """, unsafe_allow_html=True)
     
-    # 示例查询按钮
     st.markdown('<div class="example-queries">', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3, gap="medium")
     
     with col1:
         if st.button("🌍 How to quickly learn a new foreign language?", key="example1", use_container_width=True):
             st.session_state.selected_example_query = "How to quickly learn a new foreign language?"
+            st.rerun()
     
     with col2:
         if st.button("📱 Best budget smartphones under $300?", key="example2", use_container_width=True):
             st.session_state.selected_example_query = "What are the best budget smartphones under $300?"
+            st.rerun()
     
     with col3:
         if st.button("🥗 Plan healthy meal prep for professionals", key="example3", use_container_width=True):
             st.session_state.selected_example_query = "Plan a healthy meal prep for busy professionals"
+            st.rerun()
     
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # 输入框和执行按钮区域
     st.markdown('<div class="input-controls-area">', unsafe_allow_html=True)
-    # 将输入框和按钮放在同一行，优化对齐
     input_col, button_col = st.columns([4, 1], gap="medium")
     with input_col:
-        # 如果有选中的示例查询，使用它作为默认值
         default_value = st.session_state.selected_example_query if st.session_state.selected_example_query else ""
         query = st.text_input(
             "",
@@ -764,21 +775,15 @@ with main_col:
             label_visibility="collapsed"
         )
         
-        # 如果查询被设置了，清除选中的查询状态以避免重复设置
-        if st.session_state.selected_example_query and query == st.session_state.selected_example_query:
-            st.session_state.selected_example_query = ""
-        
     with button_col:
         st.markdown("<div style='height: 0.5rem;'></div>", unsafe_allow_html=True)  # 减少间距
         run_clicked = st.button("🚀 Execute", use_container_width=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # 创建占位区域用来显示回答和截图
     response_area = st.empty()
     screenshot_area = st.empty()
 
-# 侧边栏标题和说明
 st.sidebar.markdown('<h2 class="sidebar-title">🔍 Execution Monitor</h2>', unsafe_allow_html=True)
 st.sidebar.markdown("""
 <div class="sidebar-info">
@@ -795,9 +800,8 @@ st.sidebar.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 添加系统状态显示
 st.sidebar.markdown("""
-<div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+<div style="background: rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border: 1px solid rgba(255, 255, 255, 0.15);">
     <h5 style="color: white; margin-top: 0; margin-bottom: 0.8rem;">Supported Applications</h5>
     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
         <div style="display: flex; align-items: center; color: #e2e8f0; font-size: 0.85rem;">
@@ -813,24 +817,34 @@ st.sidebar.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 处理提交
 if run_clicked or st.session_state.submitted:
     if st.session_state.submitted:
         st.session_state.submitted = False
-    # 清空之前的输出
+    
+    final_query = query.strip() if query else ""
+    
+    if not final_query:
+        st.error("Please enter a task description or select one of the example queries above.")
+        st.stop()
+    
+    st.info(f"🎯 **Executing Task:** {final_query}")
+    
     response_area.empty()
     screenshot_area.empty()
     
-    # 重置状态变量
+    if 'log_content' in st.session_state:
+        st.session_state.log_content = ""
+    
     st.session_state.agent_status = "thinking"
     st.session_state.current_app = ""  # reset current app
     
-    # 创建一个状态占位符，用于动态更新状态
+
     if 'status_placeholder' not in st.session_state:
         st.session_state.status_placeholder = st.empty()
     else:
         st.session_state.status_placeholder.empty()
-        st.session_state.status_placeholder = st.empty()    # 显示初始状态
+        st.session_state.status_placeholder = st.empty()
+    
     with st.session_state.status_placeholder.container():
         st.markdown("""
         <div class="status-indicator">
@@ -842,7 +856,7 @@ if run_clicked or st.session_state.submitted:
     from task_executor import execute_task
     try:
         with capture_and_stream() as (output, main_container):
-            main_response, screenshot_paths = execute_task(query)
+            main_response, screenshot_paths = execute_task(final_query)
             st.session_state.main_response = main_response
             st.session_state.screenshot_path = screenshot_paths
     except Exception as e:
@@ -850,8 +864,14 @@ if run_clicked or st.session_state.submitted:
         st.session_state.main_response = f"ERROR: {e}"
         st.session_state.screenshot_path = None
     
-    # 清除状态提示
-    st.session_state.status_placeholder.empty()    # 显示主回答
+    with st.session_state.status_placeholder.container():
+        st.markdown("""
+        <div class="status-indicator" style="background: linear-gradient(135deg, #f1f8e9, #e8f5e8);">
+            <div style="width: 28px; height: 28px; background: #48bb78; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; color: white; font-size: 16px;">✓</div>
+            <span style="color: #48bb78; font-weight: 600; font-size: 1.1rem;">Task execution completed successfully!</span>
+        </div>
+        """, unsafe_allow_html=True)
+    
     with response_area.container():
         st.markdown("""
         <div class="response-container">
@@ -895,7 +915,7 @@ if run_clicked or st.session_state.submitted:
                         st.markdown(f"""
                         <div class="screenshot-item">
                             <div class="app-badge" style="background-color: {app_color};">{app_name}</div>
-                            <img src="data:image/png;base64,{get_image_base64(path)}" style="width: 100%; border-radius: 8px;" alt="{app_name} Screenshot">
+                            <img src="data:image/png;base64,{get_image_base64(path)}" style="max-height: 400px; width: auto; object-fit: contain; border-radius: 8px; display: block; margin: 0 auto;" alt="{app_name} Screenshot">
                         </div>
                         """, unsafe_allow_html=True)
                     elif path:
@@ -913,16 +933,17 @@ if run_clicked or st.session_state.submitted:
                         app_name = "YouTube"
                         app_color = "#ff0000"
                     
-                    col1, col2, col3 = st.columns([1, 2, 1])
-                    with col2:
-                        st.markdown(f'<div class="app-badge" style="background-color: {app_color}; text-align: center; margin-bottom: 1rem;">{app_name}</div>', unsafe_allow_html=True)
-                        st.image(path, use_container_width=True)
+                    st.markdown(f"""
+                    <div class="screenshot-item">
+                        <div class="app-badge" style="background-color: {app_color};">{app_name}</div>
+                        <img src="data:image/png;base64,{get_image_base64(path)}" style="max-height: 400px; width: auto; object-fit: contain; border-radius: 8px; display: block; margin: 0 auto;" alt="{app_name} Screenshot">
+                    </div>
+                    """, unsafe_allow_html=True)
                 elif path:
                     st.info(f"Screenshot path: {path}")
             
             st.markdown("</div>", unsafe_allow_html=True)
             
-    # 添加学术引用和CIKM信息
     st.markdown("""
     <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e1e4e8; text-align: center;">
         <p style="font-size: 0.9rem; color: #6c757d;">

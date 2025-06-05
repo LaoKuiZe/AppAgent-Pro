@@ -14,6 +14,158 @@ from and_controller import list_all_devices, AndroidController, traverse_tree
 from model import parse_explore_rsp, parse_grid_rsp, OpenAIModel
 from utils import print_with_color, draw_bbox_multi, draw_grid
 
+def generate_auto_docs(app, task_desc, task_dir, dir_name, log_path, mllm, configs):
+    """
+    Generate automatic documentation based on task execution process
+    """
+    print_with_color("Starting automatic document generation...", "yellow")
+    
+    # Create demo_docs directory (changed to demo_docs instead of auto_docs)
+    app_dir = os.path.join("./apps", app)
+    demo_docs_dir = os.path.join(app_dir, "demo_docs")
+    if not os.path.exists(demo_docs_dir):
+        os.makedirs(demo_docs_dir)
+        print_with_color(f"Created new demo_docs directory: {demo_docs_dir}", "green")
+    
+    doc_count = 0
+    
+    # Check if log file exists
+    if not os.path.exists(log_path):
+        print_with_color("Log file does not exist, cannot generate documentation", "red")
+        return 0
+    
+    try:
+        with open(log_path, "r") as logfile:
+            lines = logfile.readlines()
+            
+        for i, line in enumerate(lines):
+            try:
+                log_item = json.loads(line.strip())
+                step = log_item["step"]
+                response = log_item["response"]
+                elem_uid = log_item.get("elem_uid")  # Get element uid
+                
+                # Parse response to get action information
+                if "grid" in log_item["image"]:
+                    res = parse_grid_rsp(response)
+                else:
+                    res = parse_explore_rsp(response)
+                
+                if not res or res[0] == "ERROR" or res[0] == "FINISH":
+                    continue
+                    
+                act_name = res[0]
+                
+                # Generate documentation based on action type
+                if act_name in ["tap", "long_press", "swipe", "text"]:
+                    # Only process cases with elem_uid (non-grid mode)
+                    if not elem_uid and act_name != "text":
+                        continue
+                        
+                    # Get before and after screenshots
+                    img_before = os.path.join(task_dir, f"{dir_name}_{step}_labeled.png")
+                    img_after = os.path.join(task_dir, f"{dir_name}_{step + 1}_labeled.png")
+                    
+                    # Check if screenshots exist
+                    if not os.path.exists(img_before) or not os.path.exists(img_after):
+                        continue
+                    
+                    # Extract action parameters
+                    action_param = None
+                    
+                    if act_name == "tap":
+                        _, area = res[:-1]
+                        action_param = str(area)
+                    elif act_name == "long_press":
+                        _, area = res[:-1]
+                        action_param = str(area)
+                    elif act_name == "text":
+                        _, input_str = res[:-1]
+                        action_param = f"text_input:sep:{input_str}"
+                        # For text actions, if no elem_uid, use default name
+                        if not elem_uid:
+                            elem_uid = "text_input"
+                    elif act_name == "swipe":
+                        _, area, swipe_dir, dist = res[:-1]
+                        action_param = f"{area}:sep:{swipe_dir}"
+                        if swipe_dir in ["up", "down"]:
+                            act_name = "v_swipe"
+                        elif swipe_dir in ["left", "right"]:
+                            act_name = "h_swipe"
+                    
+                    if not action_param or not elem_uid:
+                        continue
+                    
+                    # Generate documentation prompt
+                    prompt = None
+                    if act_name == "tap":
+                        prompt = re.sub(r"<ui_element>", action_param, prompts.tap_doc_template)
+                    elif act_name == "text":
+                        input_area, input_text = action_param.split(":sep:")
+                        prompt = re.sub(r"<ui_element>", input_area, prompts.text_doc_template)
+                    elif act_name == "long_press":
+                        prompt = re.sub(r"<ui_element>", action_param, prompts.long_press_doc_template)
+                    elif act_name in ["v_swipe", "h_swipe"]:
+                        swipe_area, swipe_dir = action_param.split(":sep:")
+                        prompt = re.sub(r"<swipe_dir>", swipe_dir, prompts.swipe_doc_template)
+                        prompt = re.sub(r"<ui_element>", swipe_area, prompt)
+                    
+                    if not prompt:
+                        continue
+                        
+                    prompt = re.sub(r"<task_desc>", task_desc, prompt)
+                    
+                    # Document file path (changed to demo_docs directory)
+                    doc_name = f"{elem_uid}.txt"
+                    doc_path = os.path.join(demo_docs_dir, doc_name)
+                    
+                    # Check if document already exists
+                    doc_content = {
+                        "tap": "",
+                        "text": "",
+                        "v_swipe": "",
+                        "h_swipe": "",
+                        "long_press": ""
+                    }
+                    
+                    if os.path.exists(doc_path):
+                        try:
+                            doc_content = ast.literal_eval(open(doc_path).read())
+                            if doc_content.get(act_name):
+                                print_with_color(f"Document for element {elem_uid} {act_name} already exists, skipping", "yellow")
+                                continue
+                        except:
+                            pass
+                    
+                    print_with_color(f"Generating document for element {elem_uid} {act_name}...", "yellow")
+                    
+                    # Call model to generate document
+                    status, rsp = mllm.get_model_response(prompt, [img_before, img_after])
+                    
+                    if status:
+                        doc_content[act_name] = rsp
+                        with open(doc_path, "w") as outfile:
+                            outfile.write(str(doc_content))
+                        doc_count += 1
+                        print_with_color(f"Document generated and saved to {doc_path}", "green")
+                    else:
+                        print_with_color(f"Document generation failed: {rsp}", "red")
+                    
+                    time.sleep(configs["REQUEST_INTERVAL"])
+                    
+            except json.JSONDecodeError:
+                continue
+            except Exception as e:
+                print_with_color(f"Error processing step {i+1}: {str(e)}", "red")
+                continue
+                
+    except Exception as e:
+        print_with_color(f"Error reading log file: {str(e)}", "red")
+        return 0
+    
+    print_with_color(f"Document generation completed, {doc_count} documents generated to demo_docs directory", "green")
+    return doc_count
+
 def subtask(app: str, task_desc: str):
     configs = load_config()
     root_dir = "./"
@@ -37,9 +189,9 @@ def subtask(app: str, task_desc: str):
                 update_status_display()
     
     if app.lower() == "youtube":
-        task_desc += "IMPORTANT: You should open the first video excpet the advirtisement and stop after openning it. Remember you need to open a specific video page at the end."
+        task_desc += "IMPORTANT: You should open the first video excpet the advirtisement and stop after openning it. Remember you need to open a specific video page at the end. You need to provide a concise search keyword!"
     elif app.lower() == "amazon":
-        task_desc += "IMPORTANT: You should open the first product except the advirtisement and stop after openning it. "
+        task_desc += "IMPORTANT: You should open the first product except the advirtisement and stop after openning it. You need to provide a concise search keyword or you won't get any results!"
 
     app_dir = os.path.join(os.path.join(root_dir, "apps"), app)
     work_dir = os.path.join(root_dir, "tasks")
@@ -100,7 +252,7 @@ def subtask(app: str, task_desc: str):
         sys.exit()
     print_with_color(f"Screen resolution of {device}: {width}x{height}", "yellow")
 
-    # 初始化记录参数
+    # Initialize recording parameters
     round_count = 0
     last_act = "None"
     task_complete = False
@@ -132,7 +284,7 @@ def subtask(app: str, task_desc: str):
             x, y = x_0 + (width // cols) // 2, y_0 + (height // rows) // 2
         return x, y
 
-    # 开始运行agent
+    # Start running agent
     while round_count < configs["MAX_ROUNDS"]:
         round_count += 1
         print_with_color(f"Round {round_count}", "yellow")
@@ -218,6 +370,29 @@ def subtask(app: str, task_desc: str):
                 break
             last_act = res[-1]
             res = res[:-1]
+            
+            # Get element uid for document generation (moved here, after act_name definition)
+            elem_uid = None
+            if act_name in ["tap", "long_press", "swipe"] and not grid_on:
+                if len(res) >= 2:
+                    _, area = res[:2]
+                    if area <= len(elem_list):
+                        elem_uid = elem_list[area - 1].uid
+            
+            # Update log file, add elem_uid information
+            if elem_uid:
+                # Rewrite log, include elem_uid
+                with open(log_path, "r") as f:
+                    lines = f.readlines()
+                if lines:
+                    # Parse last line and add elem_uid
+                    last_log = json.loads(lines[-1].strip())
+                    last_log["elem_uid"] = elem_uid
+                    lines[-1] = json.dumps(last_log) + "\n"
+                    # Rewrite file
+                    with open(log_path, "w") as f:
+                        f.writelines(lines)
+            
             if act_name == "tap":
                 _, area = res
                 tl, br = elem_list[area - 1].bbox
@@ -280,6 +455,22 @@ def subtask(app: str, task_desc: str):
 
     if task_complete:
         print_with_color(f"**{app} Task completed successfully**", "yellow")
+        
+        # Check if automatic document generation is enabled
+        if configs.get("AUTO_DOC_GENERATION", False):
+            # Generate task documentation
+            print_with_color("Starting automatic document generation...", "cyan")
+            try:
+                doc_count = generate_auto_docs(app, task_desc, task_dir, dir_name, log_path, mllm, configs)
+                if doc_count > 0:
+                    print_with_color(f"Successfully generated {doc_count} documents, saved in apps/{app}/demo_docs/ directory", "green")
+                else:
+                    print_with_color("No documents generated", "yellow")
+            except Exception as e:
+                print_with_color(f"Error occurred during document generation: {str(e)}", "red")
+        else:
+            print_with_color("Automatic document generation disabled (AUTO_DOC_GENERATION: false)", "yellow")
+        
         # get the last screenshot path
         last_screenshot = os.path.join(task_dir, f"{dir_name}_{round_count}.png")
         last_screenshot_labeled = os.path.join(task_dir, f"{dir_name}_{round_count}_labeled.png")
@@ -291,6 +482,22 @@ def subtask(app: str, task_desc: str):
         return return_path
     elif round_count == configs["MAX_ROUNDS"]:
         print_with_color(f"**{app} Task finished due to reaching max rounds**", "yellow")
+        
+        # Check if automatic document generation is enabled
+        if configs.get("AUTO_DOC_GENERATION", False):
+            # Even if the task is not completed, generate documentation
+            print_with_color("Task reached max rounds, still attempting to generate partial documentation...", "cyan")
+            try:
+                doc_count = generate_auto_docs(app, task_desc, task_dir, dir_name, log_path, mllm, configs)
+                if doc_count > 0:
+                    print_with_color(f"Successfully generated {doc_count} documents, saved in apps/{app}/demo_docs/ directory", "green")
+                else:
+                    print_with_color("No documents generated", "yellow")
+            except Exception as e:
+                print_with_color(f"Error occurred during document generation: {str(e)}", "red")
+        else:
+            print_with_color("Automatic document generation disabled (AUTO_DOC_GENERATION: false)", "yellow")
+        
         # return the last screenshot path even if the task is not completed
         last_screenshot = os.path.join(task_dir, f"{dir_name}_{round_count}.png")
         last_screenshot_labeled = os.path.join(task_dir, f"{dir_name}_{round_count}_labeled.png")
