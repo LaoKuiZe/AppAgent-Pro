@@ -1,11 +1,17 @@
 import argparse
+import ast
+import datetime
+import json
+import os
 import re
+import sys
 import time
+
 import prompts
 from config import load_config
-from and_controller import list_all_devices, AndroidController
-from model import OpenAIModel
-from utils import print_with_color
+from and_controller import list_all_devices, AndroidController, traverse_tree
+from model import parse_explore_rsp, parse_grid_rsp, OpenAIModel, parse_main_rsp
+from utils import print_with_color, draw_bbox_multi, draw_grid
 from sub_task import subtask
 import streamlit as st
 
@@ -18,12 +24,18 @@ args = vars(parser.parse_args())
 def execute_task(query=None):
     configs = load_config()
 
-    # Use OpenAI model directly without checking the model type
-    mllm = OpenAIModel(base_url=configs["OPENAI_API_BASE"],
-                    api_key=configs["OPENAI_API_KEY"],
-                    model=configs["OPENAI_API_MODEL"],
-                    temperature=configs["TEMPERATURE"],
-                    max_tokens=configs["MAX_TOKENS"])
+    if configs["MODEL"] == "OpenAI":
+        mllm = OpenAIModel(base_url=configs["OPENAI_API_BASE"],
+                        api_key=configs["OPENAI_API_KEY"],
+                        model=configs["OPENAI_API_MODEL"],
+                        temperature=configs["TEMPERATURE"],
+                        max_tokens=configs["MAX_TOKENS"])
+    elif configs["MODEL"] == "Qwen":
+        mllm = QwenModel(api_key=configs["DASHSCOPE_API_KEY"],
+                        model=configs["QWEN_MODEL"])
+    else:
+        print_with_color(f"ERROR: Unsupported model type {configs['MODEL']}!", "red")
+        return "❗Unsupported model type", None
 
     if query is None:
         print_with_color("Please enter the description of the task you want me to complete in a few sentences:", "blue")
@@ -33,10 +45,12 @@ def execute_task(query=None):
         
     main_prompt = re.sub(r"<task_description>", main_desc, prompts.main_task_template)
 
+    # Update status to "analyzing problem"
     if 'agent_status' in st.session_state:
         st.session_state.agent_status = "thinking"
         update_status_display()
 
+    # First get the text answer for the main task
     print_with_color("App-Agent is thinking...", "blue")
     main_status, main_task_response = mllm.get_main_response(main_prompt)
     main_task_response = main_task_response.replace("**","")
@@ -46,12 +60,19 @@ def execute_task(query=None):
         return f"ERROR: {main_task_response}", None
     else:
         try:
-            answer = re.search(r'Answer:(.*?)(?=App:|$)', main_task_response, re.DOTALL).group(1).strip()
+            # Extract three parts using regular expressions
+            answer_match = re.search(r'Answer:(.*?)(?=App:|$)', main_task_response, re.DOTALL)
+            answer = answer_match.group(1).strip() if answer_match else ""
+            
             app_match = re.search(r'App:(.*?)(?=Sub-tasks:|$)', main_task_response, re.DOTALL)
             app = app_match.group(1).strip() if app_match else "None"
             
             subtasks_match = re.search(r'Sub-tasks:(.*?)$', main_task_response, re.DOTALL)
             subtasks = subtasks_match.group(1).strip() if subtasks_match else ""
+            
+            # If answer is empty, try using response as answer
+            if not answer:
+                answer = main_task_response.strip()
             
             print_with_color(f"Answer: {answer}", "green")
             print_with_color(f"Selected app(s): {app}", "green")
@@ -71,6 +92,7 @@ def execute_task(query=None):
             
         except Exception as e:
             print_with_color(f"ERROR: Failed to parse main task response: {str(e)}", "red")
+            print_with_color(f"Original response: {main_task_response}", "red")
             return f"ERROR OCCURRED WHEN PARSING MAIN TASK RESPONSE: {str(e)}", None
 
     screenshot_paths = []
@@ -157,7 +179,6 @@ def execute_task(query=None):
         return formatted_answer, screenshot_paths
 
 def update_status_display():
-    """update the status display according to the current status"""
     if not hasattr(st, 'session_state') or 'agent_status' not in st.session_state:
         return
     
