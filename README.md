@@ -25,7 +25,7 @@ The query is simple and can be answered entirely using the LLM’s internal know
 
 - **Video Demonstration**  
   <p align="center">
-    <video src="https://github.com/user-attachments/assets/d478e0ef-b5b1-4439-8c3a-0e4a1d33b771" controls width="600"></video>
+    <video src="https://github.com/user-attachments/assets/5fc5f83b-dbe5-4f2e-b523-28ba258962d6" controls width="600"></video>
   </p>
 
 ---
@@ -37,7 +37,7 @@ The agent chooses to enhance the answer using one external app (e.g., YouTube).
 
 - **Video Demonstration**  
   <p align="center">
-    <video src="https://github.com/user-attachments/assets/94d98220-6e0e-4edb-89ad-88ffb2c45136" controls width="600"></video>
+    <video src="https://github.com/user-attachments/assets/4a6ce824-4a26-4199-a4ff-5332e5f066a3" controls width="600"></video>
   </p>
 
 ---
@@ -49,7 +49,7 @@ The agent enhances its response with **both** YouTube and Amazon.
 
 - **Video Demonstration**  
   <p align="center">
-    <video src="https://github.com/user-attachments/assets/20288bd2-5774-4053-aa0c-c884ae4d60ba" controls width="600"></video>
+    <video src="https://github.com/user-attachments/assets/a9b5e849-3a0f-46c2-9ac6-8a35b2d3750b" controls width="600"></video>
   </p>
 
 ---
@@ -80,8 +80,7 @@ Edit `config.yaml` with:
 - 🔑 `openai_api_key`: Your OpenAI key with GPT-4o access.
 - 🌐 `openai_base`: (Optional) Base URL if using a proxy.
 - ⏱️ `request_interval`: Seconds between API calls.
-
-💡 Want to use a custom model? Implement it in `scripts/model.py`.
+- 📜 `AUTO_DOC`:If set to `true`, the system will automatically generate a document after each sub-task finishes.
 
 ---
 
