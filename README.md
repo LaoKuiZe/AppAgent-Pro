@@ -1,24 +1,29 @@
-# 🤖 AppAgent - Pro
+<!-- Title -->
+<h1 align="center">🤖 AppAgent‑Pro</h1>
 
-<p align="center">
-  <img src="assets/main.png" alt="AppAgent-Pro Banner" width="800">
-</p>
 
+<!-- Links under title -->
 <p align="center">
   <a href="https://www.dropbox.com/scl/fi/hvzqo5vnusg66srydzixo/AppAgent-Pro-demo-video.mp4?rlkey=o2nlfqgq6ihl125mcqg7bpgqu&st=9345yd8k&dl=0">Demo Video</a> •
   <a href="LICENSE">License</a>
 </p>
 
+<!-- Badges under title -->
 <p align="center">
     <a href="https://opensource.org/licenses/MIT">
-        <img src="https://img.shields.io/badge/License-MIT-yellow.svg">
+        <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
     </a>
     <a href="https://img.shields.io/badge/Python-3.9+-blue">
-        <img src="https://img.shields.io/badge/Python-3.9+-blue">
+        <img src="https://img.shields.io/badge/Python-3.9+-blue" alt="Python 3.9+">
     </a>
     <a href="https://github.com/LaoKuiZe/AppAgent-Pro">
-        <img src="https://img.shields.io/github/stars/LaoKuiZe/AppAgent-Pro">
+        <img src="https://img.shields.io/github/stars/LaoKuiZe/AppAgent-Pro" alt="GitHub Stars">
     </a>
+</p>
+
+<!-- Banner -->
+<p align="center">
+  <img src="assets/main.png" alt="AppAgent-Pro Banner" width="800">
 </p>
 
 **AppAgent-Pro** is a proactive GUI AI agent system that goes beyond text-based answers. Built as an enhancement to the original [AppAgent](https://github.com/TencentQQGYLab/AppAgent), it can **proactively interact with Android apps (YouTube, Amazon) via ADB**, decide whether external information is needed, and combine retrieved results with LLM-generated responses with exquisite GUI webpage.
