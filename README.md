@@ -1,5 +1,26 @@
 # 🤖 AppAgent - Pro
 
+<p align="center">
+  <img src="assets/main.png" alt="AppAgent-Pro Banner" width="800">
+</p>
+
+<p align="center">
+  <a href="https://www.dropbox.com/scl/fi/hvzqo5vnusg66srydzixo/AppAgent-Pro-demo-video.mp4?rlkey=o2nlfqgq6ihl125mcqg7bpgqu&st=9345yd8k&dl=0">Demo Video</a> •
+  <a href="LICENSE">License</a>
+</p>
+
+<p align="center">
+    <a href="https://opensource.org/licenses/MIT">
+        <img src="https://img.shields.io/badge/License-MIT-yellow.svg">
+    </a>
+    <a href="https://img.shields.io/badge/Python-3.9+-blue">
+        <img src="https://img.shields.io/badge/Python-3.9+-blue">
+    </a>
+    <a href="https://github.com/LaoKuiZe/AppAgent-Pro">
+        <img src="https://img.shields.io/github/stars/LaoKuiZe/AppAgent-Pro">
+    </a>
+</p>
+
 **AppAgent-Pro** is a proactive AI agent system that goes beyond text-based answers. Built as an enhancement to the original [AppAgent](https://github.com/TencentQQGYLab/AppAgent), it can **actively interact with Android apps (YouTube, Amazon) via ADB**, decide whether external information is needed, and combine retrieved results with LLM-generated responses.
 
 Unlike traditional assistants that passively respond with pretrained knowledge, **AppAgent-Pro** functions as a **proactive multimodal mobile agent** with real-world execution capabilities. It follows a unified, end-to-end pipeline of:
@@ -14,6 +35,7 @@ Unlike traditional assistants that passively respond with pretrained knowledge, 
 > 🎯 This enables AppAgent-Pro to act not only as a language model, but as a real-world **task executor** — bridging LLM cognition with interactive app control.
 
 ---
+
 ## 🎬 Strategy Comparison Demo
 
 We demonstrate how AppAgent-Pro handles three different scenarios depending on the complexity of the query and the need for external resources.
