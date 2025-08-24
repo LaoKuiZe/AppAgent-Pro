@@ -13,8 +13,8 @@
     <a href="https://opensource.org/licenses/MIT">
         <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
     </a>
-    <a href="https://img.shields.io/badge/Python-3.9+-blue">
-        <img src="https://img.shields.io/badge/Python-3.9+-blue" alt="Python 3.9+">
+    <a href="https://img.shields.io/badge/Python-3.11+-blue">
+        <img src="https://img.shields.io/badge/Python-3.11+-blue" alt="Python 3.11+">
     </a>
     <a href="https://github.com/LaoKuiZe/AppAgent-Pro">
         <img src="https://img.shields.io/github/stars/LaoKuiZe/AppAgent-Pro" alt="GitHub Stars">
@@ -144,3 +144,4 @@ AppAgent-Pro will decide which apps to use (if any), generate sub-tasks, and pre
 ## 📃 License
 
 This project is licensed under the **MIT License**. See [LICENSE](./LICENSE) for full details.
+
