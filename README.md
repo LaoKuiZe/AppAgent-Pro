@@ -4,6 +4,7 @@
 
 <!-- Links under title -->
 <p align="center">
+  <a href="https://arxiv.org/abs/2508.18689">Paper</a>•
   <a href="https://www.dropbox.com/scl/fi/hvzqo5vnusg66srydzixo/AppAgent-Pro-demo-video.mp4?rlkey=o2nlfqgq6ihl125mcqg7bpgqu&st=9345yd8k&dl=0">Demo Video</a> •
   <a href="LICENSE">License</a>
 </p>
@@ -15,9 +16,6 @@
     </a>
     <a href="https://img.shields.io/badge/Python-3.9+-blue">
         <img src="https://img.shields.io/badge/Python-3.9+-blue" alt="Python 3.9+">
-    </a>
-    <a href="https://github.com/LaoKuiZe/AppAgent-Pro">
-        <img src="https://img.shields.io/github/stars/LaoKuiZe/AppAgent-Pro" alt="GitHub Stars">
     </a>
 </p>
 
