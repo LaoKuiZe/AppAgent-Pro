@@ -21,19 +21,18 @@
 
 <!-- Banner -->
 <p align="center">
-  <img src="assets/main.png" alt="AppAgent-Pro Banner" width="800">
+  <img src="assets/main.jpg" alt="AppAgent-Pro Banner" width="800">
 </p>
 
 **AppAgent-Pro** is a proactive GUI AI agent system that goes beyond text-based answers. Built as an enhancement to the original [AppAgent](https://github.com/TencentQQGYLab/AppAgent), it can **proactively interact with Android apps (YouTube, Amazon) via ADB**, decide whether external information is needed, and combine retrieved results with LLM-generated responses with exquisite GUI webpage.
 
 Unlike traditional assistants that passively respond with pretrained knowledge, **AppAgent-Pro** functions as a **proactive multimodal mobile agent** with real-world execution capabilities. It follows a unified, end-to-end pipeline of:
 
-### 🧠 Learn → Comprehension → Execution → Integration
+### 🧠 Comprehension → Execution → Integration
 
-1. **Learn** — Before deployment, AppAgent-Pro explores how to operate target Android apps by analyzing UI layouts and recording action sequences. This is achieved via either autonomous exploration or human-guided demonstrations.
-2. **Comprehension** — Upon receiving a user query, GPT-4o is used to generate an initial answer and infer potential sub-tasks. This step leverages LLM reasoning to form a high-level plan. The agent proactively assesses whether external information is needed, determines which app(s) to launch (YouTube, Amazon), and formulates actionable sub-tasks for each.
-3. **Execution** — It then simulates real human interactions on mobile apps (clicking, swiping, entering text) via ADB, executing the sub-tasks and collecting content such as screenshots, product details, or video metadata.
-5. **Integration** — Finally, the agent merges the LLM-generated textual answer with the app-acquired content to produce a structured, enriched response — delivering a truly **proactive, context-aware output**.
+1. **Comprehension** — Upon receiving a user query, GPT-4o is used to generate an initial answer and infer potential sub-tasks. This step leverages LLM reasoning to form a high-level plan. The agent proactively assesses whether external information is needed, determines which app(s) to launch (YouTube, Amazon), and formulates actionable sub-tasks for each.
+2. **Execution** — It then simulates real human interactions on mobile apps (clicking, swiping, entering text) via ADB, executing the sub-tasks and collecting content such as screenshots, product details, or video metadata.
+3. **Integration** — Finally, the agent merges the LLM-generated textual answer with the app-acquired content to produce a structured, enriched response — delivering a truly **proactive, context-aware output**.
 
 > 🎯 This enables AppAgent-Pro to act not only as a language model, but as a real-world **task executor** — bridging LLM cognition with interactive app control.
 
